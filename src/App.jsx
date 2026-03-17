@@ -21,34 +21,43 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
+const AppContent = () => {
+  const location = useLocation();
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/signup';
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      {!isAuthPage && <Navbar />}
+      <Routes>
+        <Route path="/" element={<HomeView />} />
+        <Route 
+          path="/interview" 
+          element={
+            <ProtectedRoute>
+              <InterviewView />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/dashboard" 
+          element={
+            <ProtectedRoute>
+              <DashboardView />
+            </ProtectedRoute>
+          } 
+        />
+        <Route path="/login" element={<AuthView />} />
+        <Route path="/signup" element={<AuthView />} />
+      </Routes>
+    </div>
+  );
+};
+
 function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="min-h-screen bg-slate-50">
-          <Navbar />
-          <Routes>
-            <Route path="/" element={<HomeView />} />
-            <Route 
-              path="/interview" 
-              element={
-                <ProtectedRoute>
-                  <InterviewView />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/dashboard" 
-              element={
-                <ProtectedRoute>
-                  <DashboardView />
-                </ProtectedRoute>
-              } 
-            />
-            <Route path="/login" element={<AuthView />} />
-            <Route path="/signup" element={<AuthView />} />
-          </Routes>
-        </div>
+        <AppContent />
       </Router>
     </AuthProvider>
   );

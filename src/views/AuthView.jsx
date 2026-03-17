@@ -21,7 +21,7 @@ const AuthView = () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/dashboard`
+        redirectTo: `${window.location.origin}/`
       }
     });
     if (error) setErrorMsg(error.message);
@@ -40,7 +40,7 @@ const AuthView = () => {
           password
         });
         if (error) throw error;
-        navigate('/dashboard');
+        navigate('/');
       } else {
         const { data, error } = await supabase.auth.signUp({
           email,
@@ -52,7 +52,7 @@ const AuthView = () => {
         if (error) throw error;
         
         if (data?.session) {
-          navigate('/dashboard');
+          navigate('/');
         } else {
           setSuccessMsg('Registration successful! Please check your email for a confirmation link.');
         }
