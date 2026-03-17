@@ -1,0 +1,57 @@
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import InterviewView from './views/InterviewView';
+import DashboardView from './views/DashboardView';
+import HomeView from './views/HomeView';
+import AuthView from './views/AuthView';
+import Navbar from './components/Navbar';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+
+const ProtectedRoute = ({ children }) => {
+  const { user, loading } = useAuth();
+  
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center bg-slate-50"><div className="w-8 h-8 border-4 border-blue-600/30 border-t-blue-600 rounded-full animate-spin"></div></div>;
+  }
+  
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  return children;
+};
+
+function App() {
+  return (
+    <AuthProvider>
+      <Router>
+        <div className="min-h-screen bg-slate-50">
+          <Navbar />
+          <Routes>
+            <Route path="/" element={<HomeView />} />
+            <Route 
+              path="/interview" 
+              element={
+                <ProtectedRoute>
+                  <InterviewView />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/dashboard" 
+              element={
+                <ProtectedRoute>
+                  <DashboardView />
+                </ProtectedRoute>
+              } 
+            />
+            <Route path="/login" element={<AuthView />} />
+            <Route path="/signup" element={<AuthView />} />
+          </Routes>
+        </div>
+      </Router>
+    </AuthProvider>
+  );
+}
+
+export default App;
