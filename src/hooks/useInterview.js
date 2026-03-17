@@ -1,7 +1,17 @@
-import { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import { useState, useCallback } from 'react';
 
-const WEBHOOK_URL = 'https://n8n.ibrandiumtech.com/webhook/submit-application';
+const MOCK_RESPONSES = [
+    "That's an interesting approach. Could you elaborate on the specific actions you took?",
+    "Thank you for sharing. Can you provide a specific example to illustrate your point?",
+    "How did you overcome the primary challenge in that scenario?",
+    "That makes sense. If you had to do it differently, what would you change?",
+    "Can you walk me through your thought process when you made that decision?",
+    "What impact did this have on the overall project or team?",
+    "I see. How did you ensure you effectively communicated this to stakeholders?",
+    "Interesting. What was the most important lesson you learned from that experience?",
+    "Could you expand a bit more on your role specifically in achieving that outcome?",
+    "Excellent, thank you for those details."
+];
 
 export const useInterview = () => {
     const [messages, setMessages] = useState([
@@ -18,21 +28,22 @@ export const useInterview = () => {
         setIsLoading(true);
 
         try {
-            const response = await axios.post(WEBHOOK_URL, {
-                message: content,
-                timestamp: new Date().toISOString(),
-            });
+            // Simulate AI typing delay (1.5 seconds)
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+            // Select a random response
+            const randomResponse = MOCK_RESPONSES[Math.floor(Math.random() * MOCK_RESPONSES.length)];
 
             const aiMessage = {
                 role: 'assistant',
-                content: response.data.output || response.data.message || "I've received your message. Let's continue."
+                content: randomResponse
             };
             setMessages((prev) => [...prev, aiMessage]);
         } catch (error) {
-            console.error('Error sending message:', error);
+            console.error('Error simulating message:', error);
             setMessages((prev) => [
                 ...prev,
-                { role: 'assistant', content: "I'm sorry, I'm having trouble connecting. Could you please try again?" }
+                { role: 'assistant', content: "I'm sorry, my simulation encountered an error. Could you please try again?" }
             ]);
         } finally {
             setIsLoading(false);
