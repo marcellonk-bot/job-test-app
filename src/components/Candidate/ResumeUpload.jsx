@@ -1,6 +1,5 @@
 import React, { useState, useRef } from 'react';
 import { Upload, FileText, CheckCircle, AlertCircle, Loader2, X } from 'lucide-react';
-import axios from 'axios';
 
 const ResumeUpload = ({ onSuccess }) => {
     const [file, setFile] = useState(null);
@@ -63,26 +62,19 @@ const ResumeUpload = ({ onSuccess }) => {
         setStatus('uploading');
         setUploadProgress(0);
 
-        const formData = new FormData();
-        formData.append('resume', file);
-
         try {
-            const response = await axios.post('/api/parse-resume', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-                onUploadProgress: (progressEvent) => {
-                    const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-                    setUploadProgress(percentCompleted);
-                },
-            });
+            // Simulate file parsing delay and progress
+            for (let i = 0; i <= 100; i += 10) {
+                await new Promise(resolve => setTimeout(resolve, 200));
+                setUploadProgress(i);
+            }
 
-            console.log('Resume parsed successfully:', response.data);
+            console.log('Resume parsed successfully (simulated locally)');
             setStatus('success');
             if (onSuccess) onSuccess();
         } catch (error) {
-            console.error('Error uploading resume:', error);
-            setErrorMessage('Failed to parse resume. Please try again.');
+            console.error('Error simulating resume parsing:', error);
+            setErrorMessage('Failed to parse resume locally. Please try again.');
             setStatus('error');
         }
     };

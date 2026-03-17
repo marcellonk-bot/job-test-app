@@ -1,10 +1,6 @@
 {
   "rewrites": [
     {
-      "source": "/api/parse-resume",
-      "destination": "https://n8n.ibrandiumtech.com/webhook/get-resume"
-    },
-    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
