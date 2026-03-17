@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import InterviewView from './views/InterviewView';
 import DashboardView from './views/DashboardView';
 import HomeView from './views/HomeView';
