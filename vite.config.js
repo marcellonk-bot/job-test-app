@@ -8,4 +8,13 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  server: {
+    proxy: {
+      '/api/parse-resume': {
+        target: 'https://n8n.ibrandiumtech.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/parse-resume/, '/webhook/get-resume')
+      }
+    }
+  }
 })

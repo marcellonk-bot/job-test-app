@@ -67,7 +67,7 @@ const ResumeUpload = ({ onSuccess }) => {
         formData.append('resume', file);
 
         try {
-            const response = await axios.post('https://n8n.ibrandiumtech.com/webhook/get-resume', formData, {
+            const response = await axios.post('/api/parse-resume', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
