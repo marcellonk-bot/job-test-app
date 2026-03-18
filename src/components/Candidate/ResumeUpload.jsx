@@ -70,6 +70,25 @@ const ResumeUpload = ({ onSuccess }) => {
             }
 
             console.log('Resume parsed successfully (simulated locally)');
+            
+            // Generate mock score and summary
+            const mockScore = Math.floor(Math.random() * (98 - 70 + 1)) + 70; // 70 to 98
+            const mockSummaries = [
+                'Highly skilled candidate with strong problem-solving abilities.',
+                'Solid all-around candidate. Good technical skills.',
+                'High potential. Excellent soft skills and eager to learn.',
+                'Exceptional background. Strong technical foundation.',
+                'Extensive experience in the required tech stack.'
+            ];
+            const mockSummary = mockSummaries[Math.floor(Math.random() * mockSummaries.length)];
+            
+            const resumeData = {
+                fileName: file.name,
+                score: mockScore,
+                summary: mockSummary
+            };
+            localStorage.setItem('jobtify_resume_data', JSON.stringify(resumeData));
+
             setStatus('success');
             if (onSuccess) onSuccess();
         } catch (error) {

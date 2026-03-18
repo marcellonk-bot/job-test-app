@@ -11,16 +11,46 @@ const CandidateTable = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     useEffect(() => {
-        fetchCandidates();
+        const processAndFetch = async () => {
+            setIsLoading(true);
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                const user = session?.user;
+                if (user) {
+                    const savedData = localStorage.getItem('jobtify_resume_data');
+                    if (savedData) {
+                        const parsedData = JSON.parse(savedData);
+                        const { error } = await supabase
+                            .from('candidates')
+                            .insert([{
+                                user_id: user.id,
+                                full_name: user?.user_metadata?.full_name || parsedData.fileName.split('.')[0] || 'Candidate',
+                                resume_score: parsedData.score,
+                                summary: parsedData.summary,
+                                interview_score: 0
+                            }]);
+                            
+                        if (!error) {
+                            localStorage.removeItem('jobtify_resume_data');
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error('Error processing pending resume:', e);
+            } finally {
+                fetchCandidates();
+            }
+        };
+
+        processAndFetch();
     }, []);
 
     const fetchCandidates = async () => {
         setIsLoading(true);
         try {
             const { data, error } = await supabase
-                .from('applications')
-                .select('*')
-                .order('overall_rank', { ascending: true });
+                .from('candidates')
+                .select('*');
 
             if (error) throw error;
 
@@ -33,7 +63,15 @@ const CandidateTable = () => {
                     { id: 4, name: 'Emily Davis', resume_score: 78, interview_score: 85, overall_rank: 4, summary: 'High potential. Excellent soft skills and eager to learn, despite lower resume score.' },
                 ]);
             } else {
-                setCandidates(data);
+                const rankedData = data.map(item => ({
+                    ...item,
+                    name: item.full_name || 'Candidate',
+                    total_score: (Number(item.resume_score) || 0) + (Number(item.interview_score) || 0)
+                })).sort((a, b) => b.total_score - a.total_score).map((item, index) => ({
+                    ...item,
+                    overall_rank: index + 1
+                }));
+                setCandidates(rankedData);
             }
         } catch (error) {
             console.error('Error fetching candidates:', error);
