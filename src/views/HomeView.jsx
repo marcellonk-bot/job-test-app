@@ -3,8 +3,11 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Brain, CheckCircle, Shield, Zap, Star, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ResumeUpload from '../components/Candidate/ResumeUpload';
+import { useAuth } from '../contexts/AuthContext';
+import CandidateView from '../components/Dashboard/CandidateView';
 
 const HomeView = () => {
+    const { user, selectedRole } = useAuth();
     const [isResumeUploaded, setIsResumeUploaded] = useState(false);
 
     useEffect(() => {
@@ -18,6 +21,10 @@ const HomeView = () => {
         setIsResumeUploaded(true);
         localStorage.setItem('jobtify_resume_uploaded', 'true');
     };
+
+    if (user && selectedRole === 'candidate') {
+        return <CandidateView />;
+    }
 
     return (
         <div className="relative overflow-hidden pt-24 md:pt-32">
