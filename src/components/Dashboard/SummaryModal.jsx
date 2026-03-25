@@ -1,8 +1,10 @@
-import React from 'react';
-import { X, Brain, CheckCircle2, TrendingUp, AlertCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Brain, CheckCircle2, TrendingUp, AlertCircle, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const SummaryModal = ({ isOpen, onClose, candidate }) => {
+    const [activeTab, setActiveTab] = useState('resume');
+
     if (!candidate) return null;
 
     return (
@@ -48,7 +50,7 @@ const SummaryModal = ({ isOpen, onClose, candidate }) => {
                             </div>
 
                             {/* Body */}
-                            <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-8">
+                            <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
                                 {/* Stats Breakdown */}
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
@@ -61,37 +63,83 @@ const SummaryModal = ({ isOpen, onClose, candidate }) => {
                                     </div>
                                 </div>
 
-                                {/* Analysis Summary */}
-                                <section>
-                                    <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                        <FileText size={16} className="text-blue-500" />
-                                        Expert Analysis
-                                    </h3>
-                                    <div className="text-slate-600 leading-relaxed bg-blue-50/30 p-5 rounded-2xl border border-blue-100/50 italic">
-                                        "{candidate.summary}"
-                                    </div>
-                                </section>
+                                {/* Tabs */}
+                                <div className="flex space-x-6 border-b border-slate-200">
+                                    <button 
+                                        className={`pb-3 text-sm font-semibold transition-colors ${activeTab === 'resume' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+                                        onClick={() => setActiveTab('resume')}
+                                    >
+                                        Resume Analysis
+                                    </button>
+                                    <button 
+                                        className={`pb-3 text-sm font-semibold transition-colors ${activeTab === 'interview' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+                                        onClick={() => setActiveTab('interview')}
+                                    >
+                                        Interview Feedback
+                                    </button>
+                                </div>
 
-                                {/* Key Strengths */}
-                                <section>
-                                    <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-widest mb-4">Key Observations</h3>
-                                    <div className="space-y-3">
-                                        <div className="flex items-start gap-3 p-3 bg-white border border-slate-100 rounded-xl">
-                                            <CheckCircle2 className="text-emerald-500 mt-0.5" size={18} />
+                                {/* Tab Content */}
+                                <div className="pt-2">
+                                    {activeTab === 'resume' ? (
+                                        <section className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                                             <div>
-                                                <div className="text-sm font-semibold text-slate-900">Technical Proficiency</div>
-                                                <div className="text-xs text-slate-500">Demonstrated advanced understanding of the required tech stack.</div>
+                                                <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                                    <FileText size={16} className="text-blue-500" />
+                                                    Expert Analysis
+                                                </h3>
+                                                <div className="text-slate-600 leading-relaxed bg-blue-50/30 p-5 rounded-2xl border border-blue-100/50 italic">
+                                                    "{candidate.summary}"
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div className="flex items-start gap-3 p-3 bg-white border border-slate-100 rounded-xl">
-                                            <TrendingUp className="text-blue-500 mt-0.5" size={18} />
+                                            
+                                            {/* Key Strengths */}
                                             <div>
-                                                <div className="text-sm font-semibold text-slate-900">Growth Potential</div>
-                                                <div className="text-xs text-slate-500">Quickly adapted to challenging questions during simulation.</div>
+                                                <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-widest mb-4">Key Observations</h3>
+                                                <div className="space-y-3">
+                                                    <div className="flex items-start gap-3 p-3 bg-white border border-slate-100 rounded-xl">
+                                                        <CheckCircle2 className="text-emerald-500 mt-0.5" size={18} />
+                                                        <div>
+                                                            <div className="text-sm font-semibold text-slate-900">Technical Proficiency</div>
+                                                            <div className="text-xs text-slate-500">Demonstrated advanced understanding of the required tech stack.</div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-start gap-3 p-3 bg-white border border-slate-100 rounded-xl">
+                                                        <TrendingUp className="text-blue-500 mt-0.5" size={18} />
+                                                        <div>
+                                                            <div className="text-sm font-semibold text-slate-900">Growth Potential</div>
+                                                            <div className="text-xs text-slate-500">Quickly adapted to challenging questions based on resume.</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </div>
-                                </section>
+                                        </section>
+                                    ) : (
+                                        <section className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                            <div>
+                                                <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                                    <Brain size={16} className="text-emerald-500" />
+                                                    AI Score Reasoning
+                                                </h3>
+                                                <div className="bg-emerald-50/50 p-5 rounded-2xl border border-emerald-100/50 space-y-4 text-slate-700">
+                                                    <p>
+                                                        <strong className="text-emerald-900 block mb-1">Justification:</strong> 
+                                                        {candidate.interview_reasoning || "The candidate provided clear, structured answers to technical questions. Showed strong problem-solving logic but hesitated slightly on system design edge cases."}
+                                                    </p>
+                                                    <div className="h-px w-full bg-emerald-200/50 my-2"></div>
+                                                    <p>
+                                                        <strong className="text-emerald-900 block mb-1">Strengths Demonstrated:</strong> 
+                                                        {candidate.interview_strengths || "Communication, Debugging, React Fundamentals"}
+                                                    </p>
+                                                    <p>
+                                                        <strong className="text-emerald-900 block mb-1">Areas to Improve:</strong> 
+                                                        {candidate.interview_weaknesses || "Backend Architecture, Scalability Patterns"}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </section>
+                                    )}
+                                </div>
                             </div>
 
                             {/* Footer */}
@@ -115,15 +163,5 @@ const SummaryModal = ({ isOpen, onClose, candidate }) => {
     );
 };
 
-// Supporting component for icons
-const FileText = ({ size, className }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-        <polyline points="14 2 14 8 20 8"></polyline>
-        <line x1="16" y1="13" x2="8" y2="13"></line>
-        <line x1="16" y1="17" x2="8" y2="17"></line>
-        <polyline points="10 9 9 9 8 9"></polyline>
-    </svg>
-);
 
 export default SummaryModal;

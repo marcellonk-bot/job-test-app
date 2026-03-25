@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Brain, Mail, Lock, Eye, EyeOff, ArrowRight, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 const AuthView = () => {
   const location = useLocation();
@@ -35,6 +36,30 @@ const AuthView = () => {
 
     try {
       if (isLogin) {
+        // Intercept Manual Demo Login using Environment Variables with fallbacks
+        const demoEmployerEmail = import.meta.env.VITE_DEMO_EMPLOYER_EMAIL || 'employer@test.com';
+        const demoEmployerPassword = import.meta.env.VITE_DEMO_EMPLOYER_PASSWORD || 'demo123';
+        const demoCandidateEmail = import.meta.env.VITE_DEMO_CANDIDATE_EMAIL || 'candidate@test.com';
+        const demoCandidatePassword = import.meta.env.VITE_DEMO_CANDIDATE_PASSWORD || 'demo123';
+        const demoAdminEmail = import.meta.env.VITE_DEMO_ADMIN_EMAIL || 'admin@jobtify.my';
+        const demoAdminPassword = import.meta.env.VITE_DEMO_ADMIN_PASSWORD || 'demo123';
+
+        const isEmployerDemo = email.toLowerCase() === demoEmployerEmail.toLowerCase() && password === demoEmployerPassword;
+        const isCandidateDemo = email.toLowerCase() === demoCandidateEmail.toLowerCase() && password === demoCandidatePassword;
+        const isAdminDemo = email.toLowerCase() === demoAdminEmail.toLowerCase() && password === demoAdminPassword;
+
+        if (isEmployerDemo || isCandidateDemo || isAdminDemo) {
+           let role = 'candidate';
+           if (isEmployerDemo) role = 'employer';
+           if (isAdminDemo) role = 'admin';
+           
+           // We can mock it or actually log in if these accounts exist in Supabase.
+           // Defaulting to mock for smooth demo if they don't exist in Supabase yet.
+           loginAsDemo(role);
+           navigate('/dashboard');
+           return;
+        }
+
         const { error } = await supabase.auth.signInWithPassword({
           email,
           password
@@ -63,6 +88,8 @@ const AuthView = () => {
       setIsLoading(false);
     }
   };
+
+  const { loginAsDemo } = useAuth();
 
   // Variants for smooth slide & fade animation
   const formVariants = {
@@ -244,6 +271,28 @@ const AuthView = () => {
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
                 Google
               </button>
+
+              {isLogin && (
+                <div className="mt-4 p-4 bg-indigo-50/70 rounded-xl border border-indigo-100">
+                  <p className="text-sm font-bold text-indigo-900 mb-2">Instant Demo Access:</p>
+                  <p className="text-xs text-indigo-700 mb-3">Click an email below to autofill, then click Sign in.</p>
+                  <ul className="text-sm text-indigo-800 space-y-2">
+                    <li className="flex items-center gap-2">
+                      <span className="w-4 h-4 rounded bg-indigo-200 text-indigo-700 flex items-center justify-center text-[10px] font-bold">🏢</span>
+                      <span className="font-semibold cursor-pointer hover:text-indigo-600 transition-colors" onClick={() => {setEmail('employer@test.com'); setPassword('demo123');}}>employer@test.com</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="w-4 h-4 rounded bg-emerald-200 text-emerald-700 flex items-center justify-center text-[10px] font-bold">🤖</span>
+                      <span className="font-semibold cursor-pointer hover:text-emerald-600 transition-colors" onClick={() => {setEmail('candidate@test.com'); setPassword('demo123');}}>candidate@test.com</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="w-4 h-4 rounded bg-rose-200 text-rose-700 flex items-center justify-center text-[10px] font-bold">🛡️</span>
+                      <span className="font-semibold cursor-pointer hover:text-rose-600 transition-colors" onClick={() => {setEmail('admin@jobtify.my'); setPassword('demo123');}}>admin@jobtify.my</span>
+                    </li>
+                  </ul>
+                  <p className="text-xs text-indigo-600/80 mt-3 font-medium border-t border-indigo-200/50 pt-2">Password for all: <strong>demo123</strong></p>
+                </div>
+              )}
 
             </motion.form>
           </AnimatePresence>

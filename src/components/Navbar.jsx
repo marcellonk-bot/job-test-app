@@ -8,7 +8,7 @@ const Navbar = () => {
     const location = useLocation();
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const { user } = useAuth();
+    const { user, selectedRole, setSelectedRole } = useAuth();
 
     const handleSignOut = async () => {
         await supabase.auth.signOut();
@@ -66,6 +66,7 @@ const Navbar = () => {
                     </div>
 
                     <div className="hidden md:flex items-center gap-3">
+
                         {user ? (
                             <button onClick={handleSignOut} className="px-5 py-2.5 text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold transition-all shadow-sm active:scale-95">
                                 Sign Out
@@ -111,7 +112,7 @@ const Navbar = () => {
                                 </Link>
                             );
                         })}
-                        <div className="pt-4 space-y-3">
+                        <div className="pt-4 space-y-3 border-t border-slate-100">
                             {user ? (
                                 <button onClick={() => { handleSignOut(); setIsMobileMenuOpen(false); }} className="flex items-center justify-center w-full py-3 bg-red-50 text-red-700 hover:bg-red-100 transition-colors rounded-xl font-semibold shadow-sm border border-red-100">
                                     Sign Out

@@ -10,6 +10,18 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [selectedRole, setSelectedRole] = useState('employer');
+
+  const loginAsDemo = (role = 'employer') => {
+    const demoUser = {
+      id: `demo-${role}-123`,
+      email: `${role}@demo.com`,
+      user_metadata: { full_name: `Demo ${role.charAt(0).toUpperCase() + role.slice(1)}` }
+    };
+    setUser(demoUser);
+    setSession({ access_token: `mock-${role}-token`, user: demoUser });
+    setSelectedRole(role);
+  };
 
   if (!hasSupabaseConfig) {
     return (
@@ -42,6 +54,8 @@ export const AuthProvider = ({ children }) => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      const role = session?.user?.user_metadata?.role || 'employer';
+      if (session?.user) setSelectedRole(role);
       setLoading(false);
     });
 
@@ -50,6 +64,8 @@ export const AuthProvider = ({ children }) => {
       (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+        const role = session?.user?.user_metadata?.role || 'employer';
+        if (session?.user) setSelectedRole(role);
         setLoading(false);
       }
     );
@@ -60,7 +76,10 @@ export const AuthProvider = ({ children }) => {
   const value = {
     session,
     user,
-    loading
+    loading,
+    selectedRole,
+    setSelectedRole,
+    loginAsDemo
   };
 
   return (

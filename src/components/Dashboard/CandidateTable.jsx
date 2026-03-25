@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, TrendingUp, TrendingDown, Eye, FileText, BadgeCheck, Download } from 'lucide-react';
+import { Search, Filter, TrendingUp, TrendingDown, Eye, FileText, BadgeCheck, Download, FileOutput } from 'lucide-react';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import { supabase } from '../../lib/supabase';
 import SummaryModal from './SummaryModal';
 
@@ -117,6 +119,42 @@ const CandidateTable = () => {
         URL.revokeObjectURL(url);
     };
 
+    const handleExportPDF = () => {
+        if (!candidates.length) return;
+
+        const doc = new jsPDF();
+        
+        // Add styling and title
+        doc.setFontSize(18);
+        doc.text('Jobtify Candidate Rankings', 14, 22);
+        doc.setFontSize(11);
+        doc.setTextColor(100);
+        doc.text(`Generated on ${new Date().toLocaleDateString()}`, 14, 30);
+
+        // Prepare data
+        const tableColumn = ["Rank", "Name", "Resume Score", "Interview Score", "Total"];
+        const tableRows = candidates.map(c => [
+            `#${c.overall_rank}`,
+            c.name,
+            `${c.resume_score}%`,
+            `${c.interview_score}%`,
+            c.total_score
+        ]);
+
+        // Generate Table
+        doc.autoTable({
+            head: [tableColumn],
+            body: tableRows,
+            startY: 40,
+            theme: 'grid',
+            styles: { fontSize: 10, cellPadding: 3 },
+            headStyles: { fillColor: [37, 99, 235] } // Blue-600
+        });
+
+        // Download document
+        doc.save('jobtify_candidate_rankings.pdf');
+    };
+
     const filteredCandidates = candidates.filter(c =>
         c.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -137,10 +175,17 @@ const CandidateTable = () => {
                 <div className="flex items-center gap-2">
                     <button
                         onClick={handleExportCSV}
-                        className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-blue-100"
+                        className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors border border-emerald-100"
                     >
                         <Download size={16} />
-                        Export CSV
+                        CSV
+                    </button>
+                    <button
+                        onClick={handleExportPDF}
+                        className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-rose-100"
+                    >
+                        <FileOutput size={16} />
+                        PDF
                     </button>
                     <button className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors border border-slate-100">
                         <Filter size={16} />
