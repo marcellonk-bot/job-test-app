@@ -1,8 +1,28 @@
-import React from 'react';
+import React, { useState } from 'react';
 import CandidateTable from './CandidateTable';
+import JobPostingModal from './JobPostingModal';
+import EmployerJobsTable from './EmployerJobsTable';
 import { motion } from 'framer-motion';
 
 const EmployerDashboard = () => {
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editJob, setEditJob] = useState(null);
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+    const handleNewJob = () => {
+        setEditJob(null);
+        setIsModalOpen(true);
+    };
+
+    const handleEditJob = (job) => {
+        setEditJob(job);
+        setIsModalOpen(true);
+    };
+
+    const handleModalSuccess = () => {
+        setRefreshTrigger(prev => prev + 1);
+    };
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -16,16 +36,25 @@ const EmployerDashboard = () => {
                     <h1 className="text-2xl font-bold text-slate-900 text-premium">Hiring Manager Dashboard</h1>
                     <p className="text-slate-500">Manage and rank your candidates with AI insights</p>
                 </div>
-                <div className="flex items-center gap-3">
-                    <button className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm">
-                        New Job Posting
-                    </button>
-                </div>
             </header>
 
             <main>
-                <CandidateTable />
+                <EmployerJobsTable 
+                    onNewJob={handleNewJob} 
+                    onEditJob={handleEditJob} 
+                    refreshTrigger={refreshTrigger}
+                />
+                <div className="mt-8">
+                    <CandidateTable />
+                </div>
             </main>
+
+            <JobPostingModal 
+                isOpen={isModalOpen} 
+                onClose={() => setIsModalOpen(false)} 
+                onSuccess={handleModalSuccess}
+                editJob={editJob}
+            />
         </motion.div>
     );
 };

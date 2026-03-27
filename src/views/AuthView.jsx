@@ -48,24 +48,29 @@ const AuthView = () => {
         const isCandidateDemo = email.toLowerCase() === demoCandidateEmail.toLowerCase() && password === demoCandidatePassword;
         const isAdminDemo = email.toLowerCase() === demoAdminEmail.toLowerCase() && password === demoAdminPassword;
 
-        if (isEmployerDemo || isCandidateDemo || isAdminDemo) {
-           let role = 'candidate';
-           if (isEmployerDemo) role = 'employer';
-           if (isAdminDemo) role = 'admin';
-           
-           // We can mock it or actually log in if these accounts exist in Supabase.
-           // Defaulting to mock for smooth demo if they don't exist in Supabase yet.
-           loginAsDemo(role);
-           navigate('/dashboard');
-           return;
-        }
+        let role = 'candidate';
+        if (isEmployerDemo) role = 'employer';
+        if (isAdminDemo) role = 'admin';
 
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password
-        });
-        if (error) throw error;
-        navigate('/');
+        try {
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password
+          });
+          if (error) {
+             throw error;
+          }
+          navigate('/');
+        } catch (dbError) {
+          // If it's a demo account and real login failed, fallback to mock demo
+          if (isEmployerDemo || isCandidateDemo || isAdminDemo) {
+             console.log("Real Supabase login failed for demo account, falling back to mock login.", dbError);
+             loginAsDemo(role);
+             navigate('/dashboard');
+          } else {
+             throw dbError; // rethrow for normal accounts
+          }
+        }
       } else {
         const { data, error } = await supabase.auth.signUp({
           email,

@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, MapPin, ChevronDown, Bookmark, X, SlidersHorizontal, Info } from 'lucide-react';
+import ApplicationModal from '../Candidate/ApplicationModal';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 
 const mockJobs = [
     {
-        id: 1,
+        id: '1',
         title: 'Business Consultant',
         company: 'Intuitive Systems Sdn Bhd',
         isNew: true,
@@ -15,7 +18,7 @@ const mockJobs = [
         fallbackLogoLabel: 'IS'
     },
     {
-        id: 2,
+        id: '2',
         title: 'Senior Frontline Support Specialist',
         company: 'SEEK',
         isNew: true,
@@ -26,7 +29,7 @@ const mockJobs = [
         fallbackLogoLabel: 'SK'
     },
     {
-        id: 3,
+        id: '3',
         title: 'Software Engineer - Frontend',
         company: 'Tech Innovators',
         isNew: false,
@@ -39,8 +42,35 @@ const mockJobs = [
 ];
 
 const CandidateView = () => {
+    const { user } = useAuth();
     const [savedJobs, setSavedJobs] = useState([]);
     const [hiddenJobs, setHiddenJobs] = useState([]);
+    
+    // Application Modal State
+    const [isAppModalOpen, setIsAppModalOpen] = useState(false);
+    const [selectedJob, setSelectedJob] = useState(null);
+    const [profile, setProfile] = useState(null);
+
+    useEffect(() => {
+        if (user) {
+            fetchProfile();
+        }
+    }, [user]);
+
+    const fetchProfile = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('profiles_table')
+                .select('*')
+                .eq('user_id', user.id)
+                .single();
+            if (data) {
+                setProfile(data);
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    };
 
     const toggleSave = (id) => {
         if (savedJobs.includes(id)) {
@@ -52,6 +82,40 @@ const CandidateView = () => {
 
     const hideJob = (id) => {
         setHiddenJobs([...hiddenJobs, id]);
+    };
+
+    const openApplicationModal = (job) => {
+        setSelectedJob(job);
+        setIsAppModalOpen(true);
+    };
+
+    const handleApplySubmit = async (applicationData) => {
+        try {
+            // Note: Since mockJobs use fake text IDs like '1', '2', but Supabase requires UUID for job_id, 
+            // In a real database we would fetch real jobs and pass job.id.
+            // For this UI to function with mock jobs without failing the DB insert due to invalid UUID, 
+            // we will simulate the submit if the job ID is not a UUID.
+            const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(applicationData.job_id);
+            
+            if (isUUID) {
+                const { error } = await supabase
+                    .from('applications_table')
+                    .insert([{
+                        job_id: applicationData.job_id,
+                        candidate_id: user.id,
+                        status: 'Applied'
+                    }]);
+                
+                if (error) throw error;
+            } else {
+                console.log("Simulating application submission for mock job:", applicationData.job_id);
+                // In production, you would remove mock jobs and fetch real jobs from jobs_table.
+                await new Promise(resolve => setTimeout(resolve, 800));
+            }
+        } catch (error) {
+            console.error("Error submitting application:", error);
+            alert("Failed to submit application. Please make sure the job exists in the database.");
+        }
     };
 
     const visibleJobs = mockJobs.filter(job => !hiddenJobs.includes(job.id));
@@ -176,22 +240,31 @@ const CandidateView = () => {
                                 </div>
 
                                 {/* Actions */}
-                                <div className="absolute bottom-5 right-5 flex items-center gap-4">
+                                <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
                                     <button 
-                                        onClick={() => toggleSave(job.id)}
-                                        className="text-slate-400 hover:text-slate-600 focus:outline-none transition-colors"
-                                        title={savedJobs.includes(job.id) ? "Saved" : "Save job"}
+                                        onClick={() => openApplicationModal(job)}
+                                        className="px-5 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-sm"
                                     >
-                                        <Bookmark size={20} fill={savedJobs.includes(job.id) ? "currentColor" : "none"} className={savedJobs.includes(job.id) ? "text-[#1865cc]" : ""} />
+                                        Apply Now
                                     </button>
-                                    <button 
-                                        onClick={() => hideJob(job.id)}
-                                        className="text-slate-400 hover:text-slate-600 focus:outline-none transition-colors flex items-center gap-1 text-sm font-medium"
-                                        title="Hide job"
-                                    >
-                                        <X size={20} />
-                                        <span className="hidden md:inline">Hide</span>
-                                    </button>
+                                    
+                                    <div className="flex items-center gap-4">
+                                        <button 
+                                            onClick={() => toggleSave(job.id)}
+                                            className="text-slate-400 hover:text-slate-600 focus:outline-none transition-colors"
+                                            title={savedJobs.includes(job.id) ? "Saved" : "Save job"}
+                                        >
+                                            <Bookmark size={20} fill={savedJobs.includes(job.id) ? "currentColor" : "none"} className={savedJobs.includes(job.id) ? "text-[#1865cc]" : ""} />
+                                        </button>
+                                        <button 
+                                            onClick={() => hideJob(job.id)}
+                                            className="text-slate-400 hover:text-slate-600 focus:outline-none transition-colors flex items-center gap-1 text-sm font-medium"
+                                            title="Hide job"
+                                        >
+                                            <X size={20} />
+                                            <span className="hidden md:inline">Hide</span>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         ))}
@@ -218,6 +291,14 @@ const CandidateView = () => {
                     </div>
                 </div>
             </div>
+
+            <ApplicationModal 
+                isOpen={isAppModalOpen}
+                onClose={() => setIsAppModalOpen(false)}
+                job={selectedJob}
+                profile={profile}
+                onSubmit={handleApplySubmit}
+            />
         </div>
     );
 };
