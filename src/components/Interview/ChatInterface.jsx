@@ -121,11 +121,11 @@ const ChatInterface = ({ interviewContext, applicationId }) => {
 
             {/* Input Area */}
             <div className="p-4 border-t border-slate-100 bg-white">
-                {!hasAIConfig && messages.length > 0 && (
-                    <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2 text-sm">
-                        <AlertCircle size={18} className="text-amber-600 mt-0.5 flex-shrink-0" />
-                        <div className="text-amber-800">
-                            <strong>Demo Mode:</strong> Add VITE_OPENAI_API_KEY to enable AI-powered interviews.
+                {messages.length > 0 && (
+                    <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-xl flex items-start gap-2 text-sm">
+                        <CheckCircle2 size={18} className="text-blue-600 mt-0.5 flex-shrink-0" />
+                        <div className="text-blue-800">
+                            <strong>Powered by Puter.js:</strong> AI interviews with no configuration needed! 🚀
                         </div>
                     </div>
                 )}
