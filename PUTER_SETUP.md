@@ -2,7 +2,9 @@
 
 ## 🎉 Good News: It Works Out of the Box!
 
-Your AI Interview system now uses **Puter.js**, which works without any configuration in guest mode!
+Your AI Interview system now uses **Puter.js CDN**, which works without any configuration in guest mode!
+
+**Note**: Puter is loaded via CDN (https://js.puter.com/v2/) in the `index.html` file for browser compatibility. The npm package is Node.js only.
 
 ---
 
@@ -203,12 +205,13 @@ VITE_PUTER_PASSWORD=your_password
 ## ✨ Migration from OpenAI:
 
 ### What Changed:
-- ✅ AI service uses Puter.js SDK
+- ✅ AI service uses Puter.js CDN (browser-compatible)
 - ✅ No API key required
 - ✅ Works in guest mode
 - ✅ All features intact
 - ✅ Same UI and UX
 - ✅ Better for development
+- ✅ CDN loaded in index.html (<script src="https://js.puter.com/v2/"></script>)
 
 ### What Stayed the Same:
 - ✅ Interview flow
@@ -266,7 +269,8 @@ That's it! 🚀
 
 ### Issues?
 - Check browser console for errors
-- Verify `npm install puter` ran successfully
+- Verify Puter CDN script is loading (check Network tab in DevTools)
+- Make sure `index.html` has: `<script src="https://js.puter.com/v2/"></script>`
 - Try restarting dev server
 - Create Puter account if hitting limits
 
