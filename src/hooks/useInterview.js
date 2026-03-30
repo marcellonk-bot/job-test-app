@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { sendInterviewMessage, evaluateInterview, hasOpenAIConfig } from '../services/aiService';
+import { sendInterviewMessage, evaluateInterview, hasAIConfig } from '../services/aiService';
 
 export const useInterview = (interviewContext) => {
     const [messages, setMessages] = useState([]);
@@ -11,7 +11,7 @@ export const useInterview = (interviewContext) => {
     // Initialize with greeting when context is available
     useEffect(() => {
         if (interviewContext && messages.length === 0) {
-            const greeting = hasOpenAIConfig
+            const greeting = hasAIConfig
                 ? `Hello ${interviewContext.candidateName}! I'm your AI interviewer today for the ${interviewContext.jobTitle} position. I'll be asking you 5 questions to better understand your qualifications. Are you ready to begin?`
                 : `Hello! I am your AI interviewer today for the ${interviewContext.jobTitle} position. Note: AI is running in demo mode. Are you ready to start?`;
 
@@ -30,7 +30,7 @@ export const useInterview = (interviewContext) => {
         try {
             let aiResponse;
 
-            if (hasOpenAIConfig) {
+            if (hasAIConfig) {
                 // Use real AI service
                 aiResponse = await sendInterviewMessage(updatedMessages, interviewContext);
             } else {
@@ -77,7 +77,7 @@ export const useInterview = (interviewContext) => {
         ]);
 
         // Evaluate the interview
-        if (hasOpenAIConfig && interviewContext) {
+        if (hasAIConfig && interviewContext) {
             setIsEvaluating(true);
             try {
                 const result = await evaluateInterview(transcript, interviewContext);
@@ -120,6 +120,6 @@ export const useInterview = (interviewContext) => {
         endInterview: manualEndInterview,
         evaluation,
         isEvaluating,
-        hasAIConfig: hasOpenAIConfig
+        hasAIConfig: hasAIConfig
     };
 };

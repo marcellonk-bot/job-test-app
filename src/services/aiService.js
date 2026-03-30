@@ -1,29 +1,41 @@
 // AI Service for Interview Simulation
 // Uses Puter.js AI API for chat-based interviews
-
-import puter from 'puter';
-
-// Puter configuration
-const PUTER_APP_NAME = import.meta.env.VITE_PUTER_APP_NAME || 'jobtify-interviews';
+// Puter is loaded via CDN in index.html
 
 // Check if Puter is configured
 let isPuterConfigured = false;
 
+// Get Puter SDK from global window object (loaded via CDN)
+const getPuter = () => {
+    if (typeof window === 'undefined' || !window.puter) {
+        throw new Error('Puter SDK not loaded. Make sure the CDN script is included in index.html');
+    }
+    return window.puter;
+};
+
 // Initialize Puter
 const initializePuter = async () => {
     try {
+        const puter = getPuter();
+
         // Initialize Puter if not already done
         if (!isPuterConfigured) {
-            await puter.auth.signIn({
-                username: import.meta.env.VITE_PUTER_USERNAME,
-                password: import.meta.env.VITE_PUTER_PASSWORD,
-            });
+            const username = import.meta.env.VITE_PUTER_USERNAME;
+            const password = import.meta.env.VITE_PUTER_PASSWORD;
+
+            // Only sign in if credentials are provided
+            if (username && password) {
+                await puter.auth.signIn({
+                    username,
+                    password,
+                });
+            }
             isPuterConfigured = true;
         }
         return true;
     } catch (error) {
         console.warn('Puter initialization skipped or failed:', error.message);
-        // If no credentials, Puter might work in guest mode
+        // If no credentials, Puter works in guest mode
         isPuterConfigured = true;
         return true;
     }
@@ -101,6 +113,9 @@ export const sendInterviewMessage = async (messages, context) => {
         // Initialize Puter
         await initializePuter();
 
+        // Get Puter SDK instance
+        const puter = getPuter();
+
         const systemPrompt = generateSystemPrompt(context);
 
         // Format messages for Puter AI
@@ -140,6 +155,9 @@ export const evaluateInterview = async (transcript, context) => {
     try {
         // Initialize Puter
         await initializePuter();
+
+        // Get Puter SDK instance
+        const puter = getPuter();
 
         const evaluationPrompt = generateEvaluationPrompt(transcript, context);
 
