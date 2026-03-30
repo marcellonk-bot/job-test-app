@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Search, MapPin, ChevronDown, Bookmark, X, SlidersHorizontal, Info } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Search, MapPin, ChevronDown, Bookmark, X, SlidersHorizontal, Info, CheckCircle2, ArrowRight } from 'lucide-react';
 import ApplicationModal from '../Candidate/ApplicationModal';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -43,17 +43,22 @@ const mockJobs = [
 
 const CandidateView = () => {
     const { user } = useAuth();
+    const navigate = useNavigate();
     const [savedJobs, setSavedJobs] = useState([]);
     const [hiddenJobs, setHiddenJobs] = useState([]);
-    
+
     // Application Modal State
     const [isAppModalOpen, setIsAppModalOpen] = useState(false);
     const [selectedJob, setSelectedJob] = useState(null);
     const [profile, setProfile] = useState(null);
 
+    // Track applied jobs with their application IDs
+    const [appliedJobs, setAppliedJobs] = useState({});
+
     useEffect(() => {
         if (user) {
             fetchProfile();
+            fetchAppliedJobs();
         }
     }, [user]);
 
@@ -69,6 +74,26 @@ const CandidateView = () => {
             }
         } catch (err) {
             console.error(err);
+        }
+    };
+
+    const fetchAppliedJobs = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('applications_table')
+                .select('id, job_id')
+                .eq('candidate_id', user.id);
+
+            if (data) {
+                // Create a map of job_id -> application_id
+                const appliedMap = {};
+                data.forEach(app => {
+                    appliedMap[app.job_id] = app.id;
+                });
+                setAppliedJobs(appliedMap);
+            }
+        } catch (err) {
+            console.error('Error fetching applied jobs:', err);
         }
     };
 
@@ -91,30 +116,51 @@ const CandidateView = () => {
 
     const handleApplySubmit = async (applicationData) => {
         try {
-            // Note: Since mockJobs use fake text IDs like '1', '2', but Supabase requires UUID for job_id, 
-            // In a real database we would fetch real jobs and pass job.id.
-            // For this UI to function with mock jobs without failing the DB insert due to invalid UUID, 
-            // we will simulate the submit if the job ID is not a UUID.
             const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(applicationData.job_id);
-            
+
             if (isUUID) {
-                const { error } = await supabase
+                const { data, error } = await supabase
                     .from('applications_table')
                     .insert([{
                         job_id: applicationData.job_id,
                         candidate_id: user.id,
                         status: 'Applied'
-                    }]);
-                
+                    }])
+                    .select()
+                    .single();
+
                 if (error) throw error;
+
+                // Update applied jobs state with the new application
+                if (data) {
+                    setAppliedJobs(prev => ({
+                        ...prev,
+                        [data.job_id]: data.id
+                    }));
+                }
             } else {
+                // Simulate for mock jobs
                 console.log("Simulating application submission for mock job:", applicationData.job_id);
-                // In production, you would remove mock jobs and fetch real jobs from jobs_table.
                 await new Promise(resolve => setTimeout(resolve, 800));
+                // Add to applied jobs with mock ID
+                setAppliedJobs(prev => ({
+                    ...prev,
+                    [applicationData.job_id]: `mock-app-${applicationData.job_id}`
+                }));
             }
         } catch (error) {
             console.error("Error submitting application:", error);
             alert("Failed to submit application. Please make sure the job exists in the database.");
+        }
+    };
+
+    const startInterview = (jobId) => {
+        const applicationId = appliedJobs[jobId];
+        if (applicationId) {
+            // Store application_id in localStorage as fallback
+            localStorage.setItem('current_application_id', applicationId);
+            // Navigate to interview with application_id
+            navigate(`/interview?application_id=${applicationId}`);
         }
     };
 
@@ -241,22 +287,43 @@ const CandidateView = () => {
 
                                 {/* Actions */}
                                 <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
-                                    <button 
-                                        onClick={() => openApplicationModal(job)}
-                                        className="px-5 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-sm"
-                                    >
-                                        Apply Now
-                                    </button>
-                                    
+                                    <div className="flex items-center gap-3">
+                                        {appliedJobs[job.id] ? (
+                                            <>
+                                                <button
+                                                    disabled
+                                                    className="px-5 py-2.5 bg-emerald-50 text-emerald-700 font-bold rounded-xl border border-emerald-200 cursor-not-allowed flex items-center gap-2"
+                                                >
+                                                    <CheckCircle2 size={18} />
+                                                    Applied
+                                                </button>
+                                                <button
+                                                    onClick={() => startInterview(job.id)}
+                                                    className="px-5 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-sm flex items-center gap-2 group"
+                                                >
+                                                    Start Interview
+                                                    <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <button
+                                                onClick={() => openApplicationModal(job)}
+                                                className="px-5 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-sm"
+                                            >
+                                                Apply Now
+                                            </button>
+                                        )}
+                                    </div>
+
                                     <div className="flex items-center gap-4">
-                                        <button 
+                                        <button
                                             onClick={() => toggleSave(job.id)}
                                             className="text-slate-400 hover:text-slate-600 focus:outline-none transition-colors"
                                             title={savedJobs.includes(job.id) ? "Saved" : "Save job"}
                                         >
                                             <Bookmark size={20} fill={savedJobs.includes(job.id) ? "currentColor" : "none"} className={savedJobs.includes(job.id) ? "text-[#1865cc]" : ""} />
                                         </button>
-                                        <button 
+                                        <button
                                             onClick={() => hideJob(job.id)}
                                             className="text-slate-400 hover:text-slate-600 focus:outline-none transition-colors flex items-center gap-1 text-sm font-medium"
                                             title="Hide job"
