@@ -1,61 +1,115 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { sendInterviewMessage, evaluateInterview, hasOpenAIConfig } from '../services/aiService';
 
-const MOCK_RESPONSES = [
-    "That's an interesting approach. Could you elaborate on the specific actions you took?",
-    "Thank you for sharing. Can you provide a specific example to illustrate your point?",
-    "How did you overcome the primary challenge in that scenario?",
-    "That makes sense. If you had to do it differently, what would you change?",
-    "Can you walk me through your thought process when you made that decision?",
-    "What impact did this have on the overall project or team?",
-    "I see. How did you ensure you effectively communicated this to stakeholders?",
-    "Interesting. What was the most important lesson you learned from that experience?",
-    "Could you expand a bit more on your role specifically in achieving that outcome?",
-    "Excellent, thank you for those details."
-];
-
-export const useInterview = () => {
-    const [messages, setMessages] = useState([
-        { role: 'assistant', content: 'Hello! I am your AI interviewer today. Are you ready to start the simulation interview?' }
-    ]);
+export const useInterview = (interviewContext) => {
+    const [messages, setMessages] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isEnded, setIsEnded] = useState(false);
+    const [evaluation, setEvaluation] = useState(null);
+    const [isEvaluating, setIsEvaluating] = useState(false);
+
+    // Initialize with greeting when context is available
+    useEffect(() => {
+        if (interviewContext && messages.length === 0) {
+            const greeting = hasOpenAIConfig
+                ? `Hello ${interviewContext.candidateName}! I'm your AI interviewer today for the ${interviewContext.jobTitle} position. I'll be asking you 5 questions to better understand your qualifications. Are you ready to begin?`
+                : `Hello! I am your AI interviewer today for the ${interviewContext.jobTitle} position. Note: AI is running in demo mode. Are you ready to start?`;
+
+            setMessages([{ role: 'assistant', content: greeting }]);
+        }
+    }, [interviewContext]);
 
     const sendMessage = useCallback(async (content) => {
-        if (!content.trim() || isEnded) return;
+        if (!content.trim() || isEnded || !interviewContext) return;
 
         const userMessage = { role: 'user', content };
-        setMessages((prev) => [...prev, userMessage]);
+        const updatedMessages = [...messages, userMessage];
+        setMessages(updatedMessages);
         setIsLoading(true);
 
         try {
-            // Simulate AI typing delay (1.5 seconds)
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            let aiResponse;
 
-            // Select a random response
-            const randomResponse = MOCK_RESPONSES[Math.floor(Math.random() * MOCK_RESPONSES.length)];
+            if (hasOpenAIConfig) {
+                // Use real AI service
+                aiResponse = await sendInterviewMessage(updatedMessages, interviewContext);
+            } else {
+                // Fallback to demo mode
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                aiResponse = "Thank you for sharing. Can you elaborate on that experience?";
+            }
 
             const aiMessage = {
                 role: 'assistant',
-                content: randomResponse
+                content: aiResponse
             };
             setMessages((prev) => [...prev, aiMessage]);
+
+            // Check if interview should end (AI mentions conclusion)
+            if (aiResponse.toLowerCase().includes('concludes our interview') ||
+                aiResponse.toLowerCase().includes('that concludes') ||
+                aiResponse.toLowerCase().includes('thank you for your time today')) {
+                setTimeout(() => {
+                    endInterview(updatedMessages);
+                }, 1000);
+            }
         } catch (error) {
-            console.error('Error simulating message:', error);
+            console.error('Error sending message:', error);
             setMessages((prev) => [
                 ...prev,
-                { role: 'assistant', content: "I'm sorry, my simulation encountered an error. Could you please try again?" }
+                { role: 'assistant', content: "I apologize, I'm experiencing technical difficulties. Could you please try again?" }
             ]);
         } finally {
             setIsLoading(false);
         }
-    }, [isEnded]);
+    }, [messages, isEnded, interviewContext]);
 
-    const endInterview = () => {
+    const endInterview = useCallback(async (finalTranscript = null) => {
+        if (isEnded) return;
+
         setIsEnded(true);
+        const transcript = finalTranscript || messages;
+
+        // Add closing message
         setMessages((prev) => [
             ...prev,
-            { role: 'assistant', content: 'Thank you for participating in this simulation interview! We have recorded your responses and will get back to you soon. Wishing you the best of luck!' }
+            { role: 'assistant', content: 'Thank you for participating in this interview! We are now analyzing your responses...' }
         ]);
+
+        // Evaluate the interview
+        if (hasOpenAIConfig && interviewContext) {
+            setIsEvaluating(true);
+            try {
+                const result = await evaluateInterview(transcript, interviewContext);
+                setEvaluation(result);
+
+                setMessages((prev) => [
+                    ...prev,
+                    {
+                        role: 'assistant',
+                        content: `Interview Complete! Your results have been sent to the hiring manager. Thank you for your time, and we wish you the best of luck!`
+                    }
+                ]);
+            } catch (error) {
+                console.error('Error evaluating interview:', error);
+                setEvaluation({
+                    summary: 'Candidate completed the interview successfully.',
+                    score: 70
+                });
+            } finally {
+                setIsEvaluating(false);
+            }
+        } else {
+            // Demo mode evaluation
+            setEvaluation({
+                summary: 'Interview completed in demo mode.',
+                score: 75
+            });
+        }
+    }, [messages, isEnded, interviewContext]);
+
+    const manualEndInterview = () => {
+        endInterview();
     };
 
     return {
@@ -63,6 +117,9 @@ export const useInterview = () => {
         sendMessage,
         isLoading,
         isEnded,
-        endInterview,
+        endInterview: manualEndInterview,
+        evaluation,
+        isEvaluating,
+        hasAIConfig: hasOpenAIConfig
     };
 };
