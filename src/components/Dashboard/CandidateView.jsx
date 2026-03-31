@@ -41,11 +41,34 @@ const mockJobs = [
     }
 ];
 
+const CLASSIFICATION_OPTIONS = [
+    'Any classification',
+    'Information & Communication Technology',
+    'Sales',
+    'Marketing',
+    'Engineering',
+    'Accounting',
+    'Administration & Office Support',
+    'Healthcare & Medical',
+    'Education & Training',
+    'Hospitality & Tourism',
+    'Design & Architecture',
+    'Human Resources & Recruitment',
+];
+
 const CandidateView = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
     const [savedJobs, setSavedJobs] = useState([]);
     const [hiddenJobs, setHiddenJobs] = useState([]);
+
+    // Search state
+    const [searchKeyword, setSearchKeyword] = useState('');
+    const [searchClassification, setSearchClassification] = useState('Any classification');
+    const [searchLocation, setSearchLocation] = useState('');
+    const [isSearching, setIsSearching] = useState(false);
+    const [hasSearched, setHasSearched] = useState(false);
+    const [dbJobs, setDbJobs] = useState([]);
 
     // Application Modal State
     const [isAppModalOpen, setIsAppModalOpen] = useState(false);
@@ -164,7 +187,86 @@ const CandidateView = () => {
         }
     };
 
-    const visibleJobs = mockJobs.filter(job => !hiddenJobs.includes(job.id));
+    const handleSearch = async (e) => {
+        e?.preventDefault();
+        setIsSearching(true);
+        setHasSearched(true);
+
+        try {
+            // Build Supabase query
+            let query = supabase
+                .from('jobs_table')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (searchKeyword.trim()) {
+                query = query.or(`job_title.ilike.%${searchKeyword.trim()}%,job_description.ilike.%${searchKeyword.trim()}%`);
+            }
+            if (searchClassification !== 'Any classification') {
+                query = query.ilike('classification', `%${searchClassification}%`);
+            }
+            if (searchLocation.trim()) {
+                query = query.ilike('location', `%${searchLocation.trim()}%`);
+            }
+
+            const { data, error } = await query;
+
+            if (error) {
+                console.error('Search error:', error);
+                setDbJobs([]);
+            } else {
+                // Normalize DB jobs to match mock job shape
+                const normalized = (data || []).map(job => ({
+                    id: job.id,
+                    title: job.job_title,
+                    company: job.company_name || 'Unknown Company',
+                    isNew: job.created_at && (Date.now() - new Date(job.created_at).getTime()) < 7 * 24 * 60 * 60 * 1000,
+                    type: job.job_type || 'Full time',
+                    location: job.location || '',
+                    classification: job.classification || '',
+                    postedTime: job.created_at ? getRelativeTime(job.created_at) : '',
+                    logo: job.company_name ? `https://logo.clearbit.com/${job.company_name.toLowerCase().replace(/\s+/g, '')}.com` : '',
+                    fallbackLogoLabel: (job.company_name || 'UK').substring(0, 2).toUpperCase(),
+                    description: job.job_description,
+                }));
+                setDbJobs(normalized);
+            }
+        } catch (err) {
+            console.error('Search failed:', err);
+            setDbJobs([]);
+        } finally {
+            setIsSearching(false);
+        }
+    };
+
+    const getRelativeTime = (dateStr) => {
+        const diff = Date.now() - new Date(dateStr).getTime();
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        if (days === 0) return 'Today';
+        if (days === 1) return '1d ago';
+        if (days < 7) return `${days}d ago`;
+        if (days < 30) return `${Math.floor(days / 7)}w ago`;
+        return `${Math.floor(days / 30)}mo ago`;
+    };
+
+    // Filter mock jobs by search criteria (client-side)
+    const filterMockJobs = (jobs) => {
+        if (!hasSearched) return jobs;
+        return jobs.filter(job => {
+            const kw = searchKeyword.trim().toLowerCase();
+            const loc = searchLocation.trim().toLowerCase();
+            const matchesKeyword = !kw || job.title.toLowerCase().includes(kw) || job.company.toLowerCase().includes(kw);
+            const matchesLocation = !loc || job.location.toLowerCase().includes(loc);
+            return matchesKeyword && matchesLocation;
+        });
+    };
+
+    // Combine filtered mock jobs with DB search results
+    const allJobs = hasSearched
+        ? [...filterMockJobs(mockJobs), ...dbJobs]
+        : mockJobs;
+
+    const visibleJobs = allJobs.filter(job => !hiddenJobs.includes(job.id));
 
     return (
         <div className="min-h-screen bg-white pt-20 md:pt-24">
@@ -177,26 +279,31 @@ const CandidateView = () => {
                 
                 <div className="max-w-6xl mx-auto relative z-10 w-full">
                     {/* Search Form Area */}
-                    <div className="grid grid-cols-1 md:grid-cols-12 gap-2 mt-4 items-end">
+                    <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-12 gap-2 mt-4 items-end">
                         {/* What */}
                         <div className="md:col-span-4 flex flex-col gap-1.5">
                             <label className="text-white text-sm font-semibold ml-1">What</label>
-                            <input 
+                            <input
                                 type="text"
+                                value={searchKeyword}
+                                onChange={(e) => setSearchKeyword(e.target.value)}
                                 placeholder="Enter keywords"
                                 className="w-full px-4 py-3.5 bg-white text-slate-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#e60278]"
                             />
                         </div>
-                        
+
                         {/* Classification */}
                         <div className="md:col-span-3 flex flex-col gap-1.5">
                             <label className="text-transparent text-sm font-semibold select-none hidden md:block">.</label>
                             <div className="relative">
-                                <select className="w-full px-4 py-3.5 bg-white text-slate-600 appearance-none rounded-lg focus:outline-none focus:ring-2 focus:ring-[#e60278] cursor-pointer">
-                                    <option>Any classification</option>
-                                    <option>Information & Communication Tele...</option>
-                                    <option>Sales</option>
-                                    <option>Marketing</option>
+                                <select
+                                    value={searchClassification}
+                                    onChange={(e) => setSearchClassification(e.target.value)}
+                                    className="w-full px-4 py-3.5 bg-white text-slate-600 appearance-none rounded-lg focus:outline-none focus:ring-2 focus:ring-[#e60278] cursor-pointer"
+                                >
+                                    {CLASSIFICATION_OPTIONS.map(opt => (
+                                        <option key={opt} value={opt}>{opt}</option>
+                                    ))}
                                 </select>
                                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={20} />
                             </div>
@@ -205,8 +312,10 @@ const CandidateView = () => {
                         {/* Where */}
                         <div className="md:col-span-4 flex flex-col gap-1.5">
                             <label className="text-white text-sm font-semibold ml-1">Where</label>
-                            <input 
+                            <input
                                 type="text"
+                                value={searchLocation}
+                                onChange={(e) => setSearchLocation(e.target.value)}
                                 placeholder="Enter suburb, city, or region"
                                 className="w-full px-4 py-3.5 bg-white text-slate-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#e60278]"
                             />
@@ -214,11 +323,15 @@ const CandidateView = () => {
 
                         {/* SEEK Button */}
                         <div className="md:col-span-1">
-                            <button className="w-full bg-[#1865cc] md:bg-[#e60278] text-white font-bold py-3.5 px-4 rounded-lg hover:bg-opacity-90 transition-all flex justify-center mt-4 md:mt-0">
-                                SEEK
+                            <button
+                                type="submit"
+                                disabled={isSearching}
+                                className="w-full bg-[#1865cc] md:bg-[#e60278] text-white font-bold py-3.5 px-4 rounded-lg hover:bg-opacity-90 transition-all flex justify-center mt-4 md:mt-0 disabled:opacity-60"
+                            >
+                                {isSearching ? '...' : 'SEEK'}
                             </button>
                         </div>
-                    </div>
+                    </form>
                     
                     {/* More options link */}
                     <div className="flex justify-start md:justify-end mt-4">
