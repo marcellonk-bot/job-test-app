@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { X, Brain, CheckCircle2, TrendingUp, AlertCircle, FileText } from 'lucide-react';
+import { X, Brain, CheckCircle2, TrendingUp, AlertCircle, FileText, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const SummaryModal = ({ isOpen, onClose, candidate }) => {
+const SummaryModal = ({ isOpen, onClose, candidate, onViewInsights }) => {
     const [activeTab, setActiveTab] = useState('resume');
 
     if (!candidate) return null;
@@ -123,20 +123,33 @@ const SummaryModal = ({ isOpen, onClose, candidate }) => {
                                                 </h3>
                                                 <div className="bg-emerald-50/50 p-5 rounded-2xl border border-emerald-100/50 space-y-4 text-slate-700">
                                                     <p>
-                                                        <strong className="text-emerald-900 block mb-1">Justification:</strong> 
+                                                        <strong className="text-emerald-900 block mb-1">Justification:</strong>
                                                         {candidate.interview_reasoning || "The candidate provided clear, structured answers to technical questions. Showed strong problem-solving logic but hesitated slightly on system design edge cases."}
                                                     </p>
                                                     <div className="h-px w-full bg-emerald-200/50 my-2"></div>
                                                     <p>
-                                                        <strong className="text-emerald-900 block mb-1">Strengths Demonstrated:</strong> 
+                                                        <strong className="text-emerald-900 block mb-1">Strengths Demonstrated:</strong>
                                                         {candidate.interview_strengths || "Communication, Debugging, React Fundamentals"}
                                                     </p>
                                                     <p>
-                                                        <strong className="text-emerald-900 block mb-1">Areas to Improve:</strong> 
+                                                        <strong className="text-emerald-900 block mb-1">Areas to Improve:</strong>
                                                         {candidate.interview_weaknesses || "Backend Architecture, Scalability Patterns"}
                                                     </p>
                                                 </div>
                                             </div>
+
+                                            {onViewInsights && (
+                                                <button
+                                                    onClick={() => {
+                                                        onClose();
+                                                        onViewInsights(candidate);
+                                                    }}
+                                                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-indigo-50 text-indigo-700 font-semibold rounded-xl border border-indigo-200 hover:bg-indigo-100 transition-colors"
+                                                >
+                                                    <Sparkles size={16} />
+                                                    View Full Interview Insights
+                                                </button>
+                                            )}
                                         </section>
                                     )}
                                 </div>

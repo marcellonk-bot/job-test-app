@@ -4,6 +4,7 @@ import InterviewView from './views/InterviewView';
 import DashboardView from './views/DashboardView';
 import HomeView from './views/HomeView';
 import AuthView from './views/AuthView';
+import CandidateProgressDashboard from './components/Dashboard/CandidateProgressDashboard';
 import Navbar from './components/Navbar';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
@@ -38,13 +39,25 @@ const AppContent = () => {
             </ProtectedRoute>
           } 
         />
-        <Route 
-          path="/dashboard" 
+        <Route
+          path="/dashboard"
           element={
             <ProtectedRoute>
               <DashboardView />
             </ProtectedRoute>
-          } 
+          }
+        />
+        <Route
+          path="/progress"
+          element={
+            <ProtectedRoute>
+              <div className="min-h-screen bg-slate-50 p-6 pt-24 md:pt-32">
+                <div className="max-w-7xl mx-auto">
+                  <CandidateProgressDashboard />
+                </div>
+              </div>
+            </ProtectedRoute>
+          }
         />
         <Route path="/login" element={<AuthView />} />
         <Route path="/signup" element={<AuthView />} />

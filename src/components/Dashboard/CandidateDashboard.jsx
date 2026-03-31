@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Shield, ArrowRight, Brain, Clock, CheckCircle, User, Edit3, FileText, Briefcase } from 'lucide-react';
+import { Shield, ArrowRight, Brain, Clock, CheckCircle, User, Edit3, FileText, Briefcase, BarChart3 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ResumeUpload from '../Candidate/ResumeUpload';
 import EditProfileModal from '../Candidate/EditProfileModal';
@@ -259,6 +259,23 @@ const CandidateDashboard = () => {
                     <p className="text-slate-600 text-sm mt-1">Once you complete the simulation, your score will be instantly visible to potential employers via the Hiring Manager portal.</p>
                 </div>
             </div>
+
+            {/* Progress Dashboard Link */}
+            <Link
+                to="/progress"
+                className="flex items-center justify-between p-6 bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-200 transition-all group"
+            >
+                <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center group-hover:bg-indigo-100 transition-colors">
+                        <BarChart3 className="text-indigo-600" size={24} />
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-slate-900 text-sm">Progress Dashboard</h3>
+                        <p className="text-slate-500 text-sm mt-0.5">Review past interviews, scores, and AI feedback</p>
+                    </div>
+                </div>
+                <ArrowRight size={18} className="text-slate-400 group-hover:text-blue-600 transition-colors" />
+            </Link>
 
             <EditProfileModal 
                 isOpen={isEditModalOpen} 

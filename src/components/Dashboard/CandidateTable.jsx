@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, TrendingUp, TrendingDown, Eye, FileText, BadgeCheck, Download, FileOutput } from 'lucide-react';
+import { Search, Filter, TrendingUp, TrendingDown, Eye, FileText, BadgeCheck, Download, FileOutput, Brain } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { supabase } from '../../lib/supabase';
 import SummaryModal from './SummaryModal';
+import AIInterviewInsights from './AIInterviewInsights';
 
 const CandidateTable = () => {
     const [candidates, setCandidates] = useState([]);
@@ -11,6 +12,8 @@ const CandidateTable = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCandidate, setSelectedCandidate] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [insightsCandidate, setInsightsCandidate] = useState(null);
+    const [isInsightsOpen, setIsInsightsOpen] = useState(false);
 
     useEffect(() => {
         const processAndFetch = async () => {
@@ -90,6 +93,11 @@ const CandidateTable = () => {
     const openSummary = (candidate) => {
         setSelectedCandidate(candidate);
         setIsModalOpen(true);
+    };
+
+    const openInsights = (candidate) => {
+        setInsightsCandidate(candidate);
+        setIsInsightsOpen(true);
     };
 
     const handleExportCSV = () => {
@@ -242,13 +250,22 @@ const CandidateTable = () => {
                                     </span>
                                 </td>
                                 <td className="px-6 py-4 text-right">
-                                    <button
-                                        onClick={() => openSummary(candidate)}
-                                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                                        title="View AI Summary"
-                                    >
-                                        <Eye size={18} />
-                                    </button>
+                                    <div className="inline-flex items-center gap-1">
+                                        <button
+                                            onClick={() => openSummary(candidate)}
+                                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                            title="View AI Summary"
+                                        >
+                                            <Eye size={18} />
+                                        </button>
+                                        <button
+                                            onClick={() => openInsights(candidate)}
+                                            className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                                            title="AI Interview Insights"
+                                        >
+                                            <Brain size={18} />
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         ))}
@@ -260,6 +277,16 @@ const CandidateTable = () => {
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 candidate={selectedCandidate}
+                onViewInsights={(c) => {
+                    setIsModalOpen(false);
+                    openInsights(c);
+                }}
+            />
+
+            <AIInterviewInsights
+                isOpen={isInsightsOpen}
+                onClose={() => setIsInsightsOpen(false)}
+                candidate={insightsCandidate}
             />
         </div>
     );

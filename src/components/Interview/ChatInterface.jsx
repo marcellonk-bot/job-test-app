@@ -29,13 +29,15 @@ const ChatInterface = ({ interviewContext, applicationId }) => {
 
                 try {
                     if (applicationId) {
-                        // Update application with interview results
+                        // Update application with interview results and transcript
                         const { error: updateError } = await supabase
                             .from('applications_table')
                             .update({
                                 interview_score: evaluation.score,
                                 ai_insights: evaluation.summary,
-                                status: 'Interviewed'
+                                status: 'Interviewed',
+                                interviewed_at: new Date().toISOString(),
+                                interview_transcript: messages
                             })
                             .eq('id', applicationId);
 
