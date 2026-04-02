@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Brain, LayoutDashboard, MessageSquare, Home, Menu, X } from 'lucide-react';
+import { Brain, LayoutDashboard, MessageSquare, Home, Menu, X, TrendingUp } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 
@@ -22,11 +22,17 @@ const Navbar = () => {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    const navLinks = [
-        { name: 'Home', path: '/', icon: Home },
-        { name: 'Interview', path: '/interview', icon: MessageSquare },
-        { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    ];
+    const navLinks = selectedRole === 'candidate'
+        ? [
+            { name: 'Job Search', path: '/', icon: Home },
+            { name: 'Progress', path: '/progress', icon: TrendingUp },
+            { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+        ]
+        : [
+            { name: 'Home', path: '/', icon: Home },
+            { name: 'Interview', path: '/interview', icon: MessageSquare },
+            { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+        ];
 
     const isActive = (path) => {
         if (path === '/' && location.pathname !== '/') return false;

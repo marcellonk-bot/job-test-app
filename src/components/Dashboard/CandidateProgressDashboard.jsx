@@ -2,39 +2,29 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     BarChart3, ChevronDown, ChevronRight, Clock, MessageSquare,
-    Sparkles, Target, TrendingUp, User, Bot, ArrowLeft,
-    CheckCircle2, AlertTriangle, Lightbulb, Award, Briefcase
+    Sparkles, TrendingUp, User, Bot, ArrowLeft,
+    CheckCircle2, Lightbulb, Briefcase,
+    CircleDot, XCircle
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 
-// ── Progress Bar Component ──────────────────────────────────────────────────
-const ProgressBar = ({ label, value, color = 'blue' }) => {
-    const colorMap = {
-        blue: { bar: 'bg-blue-500', track: 'bg-blue-100', text: 'text-blue-700' },
-        emerald: { bar: 'bg-emerald-500', track: 'bg-emerald-100', text: 'text-emerald-700' },
-        amber: { bar: 'bg-amber-500', track: 'bg-amber-100', text: 'text-amber-700' },
-        indigo: { bar: 'bg-indigo-500', track: 'bg-indigo-100', text: 'text-indigo-700' },
-        rose: { bar: 'bg-rose-500', track: 'bg-rose-100', text: 'text-rose-700' },
+// ── Status Badge Component ──────────────────────────────────────────────────
+const StatusBadge = ({ status }) => {
+    const statusConfig = {
+        Accepted: { color: 'bg-emerald-100 text-emerald-700 border-emerald-200', icon: CheckCircle2 },
+        Pending: { color: 'bg-amber-100 text-amber-700 border-amber-200', icon: CircleDot },
+        Rejected: { color: 'bg-rose-100 text-rose-700 border-rose-200', icon: XCircle },
     };
-    const c = colorMap[color] || colorMap.blue;
+    const config = statusConfig[status] || statusConfig.Pending;
+    const Icon = config.icon;
 
     return (
-        <div className="space-y-1.5">
-            <div className="flex items-center justify-between text-sm">
-                <span className="font-medium text-slate-700">{label}</span>
-                <span className={`font-bold ${c.text}`}>{value}%</span>
-            </div>
-            <div className={`w-full h-2.5 rounded-full ${c.track}`}>
-                <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${value}%` }}
-                    transition={{ duration: 0.8, ease: 'easeOut' }}
-                    className={`h-2.5 rounded-full ${c.bar}`}
-                />
-            </div>
-        </div>
+        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${config.color}`}>
+            <Icon size={12} />
+            {status}
+        </span>
     );
 };
 
@@ -92,22 +82,9 @@ const AIInsightBox = ({ insight }) => {
     );
 };
 
-// ── Score Badge ─────────────────────────────────────────────────────────────
-const ScoreBadge = ({ score }) => {
-    let color = 'bg-rose-100 text-rose-700 border-rose-200';
-    if (score >= 80) color = 'bg-emerald-100 text-emerald-700 border-emerald-200';
-    else if (score >= 60) color = 'bg-blue-100 text-blue-700 border-blue-200';
-    else if (score >= 40) color = 'bg-amber-100 text-amber-700 border-amber-200';
-
-    return (
-        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${color}`}>
-            {score}/100
-        </span>
-    );
-};
 
 // ── Parse transcript into Q&A pairs with AI insights ────────────────────────
-const parseTranscript = (transcript, overallScore) => {
+const parseTranscript = (transcript) => {
     if (!transcript || !Array.isArray(transcript) || transcript.length < 2) return [];
 
     const pairs = [];
@@ -166,27 +143,15 @@ const parseTranscript = (transcript, overallScore) => {
     return pairs;
 };
 
-// ── Derive scoring categories from overall score ────────────────────────────
-const deriveCategories = (score) => {
-    // Create realistic variation around the overall score
-    const vary = (base, offset) => Math.max(0, Math.min(100, base + offset));
-    return {
-        technicalAccuracy: vary(score, Math.round((Math.random() - 0.5) * 16)),
-        communicationStyle: vary(score, Math.round((Math.random() - 0.5) * 14)),
-        problemSolving: vary(score, Math.round((Math.random() - 0.5) * 18)),
-        relevance: vary(score, Math.round((Math.random() - 0.5) * 12)),
-    };
-};
 
 // ── Demo sessions for when no DB data exists ────────────────────────────────
 const getDemoSessions = () => [
     {
         id: 'demo-1',
         job_title: 'Senior Frontend Developer',
-        interview_score: 82,
         ai_insights: 'Strong React fundamentals with excellent component architecture skills. Communicated complex concepts clearly.',
         interviewed_at: new Date(Date.now() - 2 * 86400000).toISOString(),
-        status: 'Interviewed',
+        status: 'Accepted',
         transcript: [
             { role: 'assistant', content: "Hello! I'm your AI interviewer for the Senior Frontend Developer position. Let's begin. Can you describe your experience with React and how you've used it in production applications?" },
             { role: 'user', content: "I've been working with React for over 4 years now. In my last role, I built a large-scale SaaS dashboard using React with TypeScript. We used Redux Toolkit for state management and implemented code-splitting with React.lazy for performance. For example, we reduced our initial bundle size by 40% through dynamic imports." },
@@ -203,10 +168,9 @@ const getDemoSessions = () => [
     {
         id: 'demo-2',
         job_title: 'Full Stack Engineer',
-        interview_score: 68,
         ai_insights: 'Solid understanding of backend concepts but could strengthen system design explanations. Good communication overall.',
         interviewed_at: new Date(Date.now() - 7 * 86400000).toISOString(),
-        status: 'Interviewed',
+        status: 'Pending',
         transcript: [
             { role: 'assistant', content: "Welcome! I'll be interviewing you for the Full Stack Engineer position. Let's start — can you describe a full-stack project you've built from scratch?" },
             { role: 'user', content: "I built a task management app with a Node.js backend using Express and PostgreSQL, and a React frontend. It had user authentication with JWT and real-time updates using Socket.io." },
@@ -231,8 +195,6 @@ const CandidateProgressDashboard = () => {
     const [sessions, setSessions] = useState([]);
     const [selectedSession, setSelectedSession] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [categories, setCategories] = useState(null);
-    const [sidebarOpen, setSidebarOpen] = useState(true);
 
     // Fetch interview sessions
     useEffect(() => {
@@ -245,7 +207,6 @@ const CandidateProgressDashboard = () => {
                     .from('applications_table')
                     .select(`
                         id,
-                        interview_score,
                         ai_insights,
                         status,
                         interviewed_at,
@@ -255,35 +216,30 @@ const CandidateProgressDashboard = () => {
                         )
                     `)
                     .eq('user_id', user?.id)
-                    .eq('status', 'Interviewed')
+                    .in('status', ['Accepted', 'Pending', 'Rejected', 'Interviewed'])
                     .order('interviewed_at', { ascending: false });
 
                 if (error || !data || data.length === 0) {
-                    // Fallback to demo sessions
                     const demo = getDemoSessions();
                     setSessions(demo);
                     setSelectedSession(demo[0]);
-                    setCategories(deriveCategories(demo[0].interview_score));
                 } else {
                     const mapped = data.map((app) => ({
                         id: app.id,
                         job_title: app.jobs_table?.job_title || 'Interview Session',
-                        interview_score: app.interview_score || 0,
                         ai_insights: app.ai_insights || 'Interview completed.',
                         interviewed_at: app.interviewed_at,
-                        status: app.status,
+                        status: app.status === 'Interviewed' ? 'Pending' : app.status,
                         transcript: app.interview_transcript || null,
                     }));
                     setSessions(mapped);
                     setSelectedSession(mapped[0]);
-                    setCategories(deriveCategories(mapped[0].interview_score));
                 }
             } catch (err) {
                 console.error('Error fetching sessions:', err);
                 const demo = getDemoSessions();
                 setSessions(demo);
                 setSelectedSession(demo[0]);
-                setCategories(deriveCategories(demo[0].interview_score));
             } finally {
                 setLoading(false);
             }
@@ -292,34 +248,11 @@ const CandidateProgressDashboard = () => {
         fetchSessions();
     }, [user]);
 
-    // Update categories when session changes
     const handleSelectSession = (session) => {
         setSelectedSession(session);
-        setCategories(deriveCategories(session.interview_score));
     };
 
-    const qaPairs = selectedSession ? parseTranscript(selectedSession.transcript, selectedSession.interview_score) : [];
-
-    // Determine strengths/weaknesses from score
-    const getStrengthsWeaknesses = (score, insights) => {
-        const strengths = [];
-        const weaknesses = [];
-
-        if (score >= 70) strengths.push('Strong overall performance');
-        if (score >= 80) strengths.push('Excellent technical depth');
-        if (categories?.communicationStyle >= 75) strengths.push('Clear communication');
-        if (categories?.problemSolving >= 75) strengths.push('Solid problem-solving approach');
-
-        if (score < 70) weaknesses.push('Room for more detailed responses');
-        if (categories?.technicalAccuracy < 65) weaknesses.push('Could strengthen technical specifics');
-        if (categories?.communicationStyle < 65) weaknesses.push('Improve response structure');
-        if (categories?.relevance < 65) weaknesses.push('Tie answers closer to role requirements');
-
-        if (strengths.length === 0) strengths.push('Completed all interview questions');
-        if (weaknesses.length === 0) weaknesses.push('Continue practicing for even stronger results');
-
-        return { strengths, weaknesses };
-    };
+    const qaPairs = selectedSession ? parseTranscript(selectedSession.transcript) : [];
 
     if (loading) {
         return (
@@ -328,10 +261,6 @@ const CandidateProgressDashboard = () => {
             </div>
         );
     }
-
-    const { strengths, weaknesses } = selectedSession
-        ? getStrengthsWeaknesses(selectedSession.interview_score, selectedSession.ai_insights)
-        : { strengths: [], weaknesses: [] };
 
     return (
         <motion.div
@@ -399,7 +328,7 @@ const CandidateProgressDashboard = () => {
                                                 </span>
                                             </div>
                                         </div>
-                                        <ScoreBadge score={session.interview_score} />
+                                        <StatusBadge status={session.status} />
                                     </div>
                                 </button>
                             ))}
@@ -419,19 +348,33 @@ const CandidateProgressDashboard = () => {
                                 transition={{ duration: 0.3 }}
                                 className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden"
                             >
-                                {/* Score Header */}
-                                <div className="p-6 md:p-8 bg-gradient-to-br from-blue-600 to-indigo-700 text-white">
+                                {/* Status Header */}
+                                <div className={`p-6 md:p-8 text-white ${
+                                    selectedSession.status === 'Accepted' ? 'bg-gradient-to-br from-emerald-600 to-teal-700' :
+                                    selectedSession.status === 'Rejected' ? 'bg-gradient-to-br from-rose-600 to-red-700' :
+                                    'bg-gradient-to-br from-blue-600 to-indigo-700'
+                                }`}>
                                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                                         <div>
                                             <h2 className="text-xl font-bold">{selectedSession.job_title}</h2>
-                                            <p className="text-blue-100 text-sm mt-1 flex items-center gap-1.5">
-                                                <Target size={14} />
-                                                Performance Overview
+                                            <p className="text-white/70 text-sm mt-1">
+                                                Applied {selectedSession.interviewed_at
+                                                    ? new Date(selectedSession.interviewed_at).toLocaleDateString('en-US', {
+                                                        month: 'short', day: 'numeric', year: 'numeric'
+                                                    })
+                                                    : 'Recently'
+                                                }
                                             </p>
                                         </div>
-                                        <div className="flex items-baseline gap-2 bg-white/10 backdrop-blur-sm px-5 py-3 rounded-2xl border border-white/20">
-                                            <span className="text-4xl font-bold">{selectedSession.interview_score}</span>
-                                            <span className="text-blue-200 text-lg font-medium">/100</span>
+                                        <div className={`flex items-center gap-2 px-5 py-3 rounded-2xl border border-white/20 backdrop-blur-sm ${
+                                            selectedSession.status === 'Accepted' ? 'bg-emerald-500/20' :
+                                            selectedSession.status === 'Rejected' ? 'bg-rose-500/20' :
+                                            'bg-white/10'
+                                        }`}>
+                                            {selectedSession.status === 'Accepted' && <CheckCircle2 size={22} />}
+                                            {selectedSession.status === 'Pending' && <CircleDot size={22} />}
+                                            {selectedSession.status === 'Rejected' && <XCircle size={22} />}
+                                            <span className="text-xl font-bold">{selectedSession.status}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -443,49 +386,6 @@ const CandidateProgressDashboard = () => {
                                             "{selectedSession.ai_insights}"
                                         </p>
                                     </div>
-
-                                    {/* Strengths & Weaknesses */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <div className="p-4 bg-emerald-50/50 rounded-xl border border-emerald-100">
-                                            <h3 className="text-xs font-bold text-emerald-800 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                                                <Award size={13} /> Key Strengths
-                                            </h3>
-                                            <ul className="space-y-2">
-                                                {strengths.map((s, i) => (
-                                                    <li key={i} className="flex items-start gap-2 text-sm text-emerald-700">
-                                                        <CheckCircle2 size={14} className="mt-0.5 flex-shrink-0" />
-                                                        {s}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                        <div className="p-4 bg-amber-50/50 rounded-xl border border-amber-100">
-                                            <h3 className="text-xs font-bold text-amber-800 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                                                <AlertTriangle size={13} /> Areas to Improve
-                                            </h3>
-                                            <ul className="space-y-2">
-                                                {weaknesses.map((w, i) => (
-                                                    <li key={i} className="flex items-start gap-2 text-sm text-amber-700">
-                                                        <ChevronRight size={14} className="mt-0.5 flex-shrink-0" />
-                                                        {w}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    </div>
-
-                                    {/* Scoring Category Progress Bars */}
-                                    {categories && (
-                                        <div className="space-y-4 pt-2">
-                                            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                                                Scoring Breakdown
-                                            </h3>
-                                            <ProgressBar label="Technical Accuracy" value={categories.technicalAccuracy} color="blue" />
-                                            <ProgressBar label="Communication Style" value={categories.communicationStyle} color="emerald" />
-                                            <ProgressBar label="Problem Solving" value={categories.problemSolving} color="indigo" />
-                                            <ProgressBar label="Role Relevance" value={categories.relevance} color="amber" />
-                                        </div>
-                                    )}
                                 </div>
                             </motion.div>
 
