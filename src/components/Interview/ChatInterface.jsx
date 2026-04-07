@@ -4,6 +4,7 @@ import { useInterview } from '../../hooks/useInterview';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import FeedbackRating from './FeedbackRating';
 
 const ChatInterface = ({ interviewContext, applicationId }) => {
     const { user } = useAuth();
@@ -206,11 +207,16 @@ const ChatInterface = ({ interviewContext, applicationId }) => {
                         )}
 
                         {/* Completion Status */}
-                        <div className="text-center">
+                        <div className="text-center mb-6">
                             <div className="inline-flex items-center px-4 py-2 bg-slate-100 text-slate-700 rounded-full text-sm font-medium border border-slate-200">
                                 Interview Session Ended
                             </div>
                         </div>
+
+                        {/* Candidate Feedback */}
+                        {evaluation && !isEvaluating && (
+                            <FeedbackRating sessionId={applicationId} />
+                        )}
                     </div>
                 )}
             </div>

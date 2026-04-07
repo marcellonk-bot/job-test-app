@@ -472,16 +472,29 @@ const CandidateProgressDashboard = () => {
                             </motion.div>
                         </>
                     ) : (
-                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-12 text-center">
-                            <TrendingUp size={48} className="text-slate-300 mx-auto mb-4" />
-                            <h2 className="text-lg font-bold text-slate-700 mb-2">No Sessions Yet</h2>
-                            <p className="text-slate-500 mb-6">Complete an interview to see your progress here.</p>
+                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-12 text-center h-full flex flex-col justify-center items-center min-h-[400px]">
+                            <div className="flex justify-center mb-8 relative">
+                                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-48 h-3 border-b-2 border-dashed border-slate-200"></div>
+                                <div className="relative z-10 w-28 h-28 bg-slate-50 rounded-full border-8 border-white shadow-sm flex items-center justify-center">
+                                    <User size={48} className="text-slate-400" />
+                                </div>
+                                <div className="absolute top-2 -right-4 w-12 h-12 bg-blue-50 rounded-full border-4 border-white flex items-center justify-center shadow-sm z-20">
+                                    <Flag size={20} className="text-blue-500" />
+                                </div>
+                                <div className="absolute bottom-4 -left-4 w-10 h-10 bg-emerald-50 rounded-full border-4 border-white flex items-center justify-center shadow-sm z-20">
+                                    <Sparkles size={16} className="text-emerald-500" />
+                                </div>
+                            </div>
+                            <h2 className="text-2xl font-bold text-slate-900 mb-3 tracking-tight">No Interviews Yet</h2>
+                            <p className="text-slate-500 mb-8 max-w-sm mx-auto leading-relaxed">
+                                You haven't had any interviews yet. Complete your first AI interview to get detailed feedback and track your progress.
+                            </p>
                             <Link
                                 to="/interview"
-                                className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200/50"
+                                className="inline-flex items-center gap-2 px-8 py-3.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200/50 hover:shadow-blue-300 hover:-translate-y-0.5"
                             >
-                                Start Interview
-                                <ChevronRight size={16} />
+                                Start Your First Interview
+                                <ChevronRight size={18} />
                             </Link>
                         </div>
                     )}

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, TrendingUp, TrendingDown, Eye, FileText, BadgeCheck, Download, FileOutput, Brain } from 'lucide-react';
+import { Search, Filter, TrendingUp, TrendingDown, Eye, FileText, BadgeCheck, Download, FileOutput, Brain, Users, Sparkles, ClipboardCheck } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { supabase } from '../../lib/supabase';
 import SummaryModal from './SummaryModal';
 import AIInterviewInsights from './AIInterviewInsights';
+import FinalReviewModal, { BADGE_STYLES } from './FinalReviewModal';
 
 const CandidateTable = () => {
     const [candidates, setCandidates] = useState([]);
@@ -14,6 +15,10 @@ const CandidateTable = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [insightsCandidate, setInsightsCandidate] = useState(null);
     const [isInsightsOpen, setIsInsightsOpen] = useState(false);
+    const [reviewCandidate, setReviewCandidate] = useState(null);
+    const [isReviewOpen, setIsReviewOpen] = useState(false);
+    const [showFilterMenu, setShowFilterMenu] = useState(false);
+    const [minResumeScore, setMinResumeScore] = useState(0);
 
     useEffect(() => {
         const processAndFetch = async () => {
@@ -100,6 +105,21 @@ const CandidateTable = () => {
         setIsInsightsOpen(true);
     };
 
+    const openReview = (candidate) => {
+        setReviewCandidate(candidate);
+        setIsReviewOpen(true);
+    };
+
+    const handleReviewSaved = (updatedCandidate) => {
+        setCandidates(prev =>
+            prev.map(c =>
+                c.id === updatedCandidate.id
+                    ? { ...c, recommendation: updatedCandidate.recommendation, employer_notes: updatedCandidate.employer_notes }
+                    : c
+            )
+        );
+    };
+
     const handleExportCSV = () => {
         if (!candidates.length) return;
 
@@ -164,7 +184,8 @@ const CandidateTable = () => {
     };
 
     const filteredCandidates = candidates.filter(c =>
-        c.name.toLowerCase().includes(searchTerm.toLowerCase())
+        c.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        (Number(c.resume_score) || 0) >= minResumeScore
     );
 
     return (
@@ -180,25 +201,37 @@ const CandidateTable = () => {
                         className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={handleExportCSV}
-                        className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors border border-emerald-100"
-                    >
-                        <Download size={16} />
-                        CSV
-                    </button>
-                    <button
-                        onClick={handleExportPDF}
-                        className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-rose-100"
-                    >
-                        <FileOutput size={16} />
-                        PDF
-                    </button>
-                    <button className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors border border-slate-100">
+                <div className="flex items-center gap-2 relative">
+                    <button 
+                        onClick={() => setShowFilterMenu(!showFilterMenu)}
+                        className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors border ${showFilterMenu || minResumeScore > 0 ? 'bg-blue-50 text-blue-600 border-blue-200' : 'text-slate-600 hover:bg-slate-50 border-slate-100'}`}>
                         <Filter size={16} />
                         Filters
                     </button>
+                    {showFilterMenu && (
+                        <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 py-2 z-50 animate-in fade-in slide-in-from-top-2">
+                            <div className="px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                Min Resume Score
+                            </div>
+                            {[
+                                { label: 'All Scores', value: 0 },
+                                { label: '> 70%', value: 70 },
+                                { label: '> 80%', value: 80 },
+                                { label: '> 90%', value: 90 }
+                            ].map((option) => (
+                                <button
+                                    key={option.value}
+                                    onClick={() => {
+                                        setMinResumeScore(option.value);
+                                        setShowFilterMenu(false);
+                                    }}
+                                    className={`w-full text-left px-4 py-2 text-sm transition-colors ${minResumeScore === option.value ? 'bg-blue-50 text-blue-600 font-medium' : 'text-slate-600 hover:bg-slate-50'}`}
+                                >
+                                    {option.label}
+                                </button>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -210,13 +243,37 @@ const CandidateTable = () => {
                             <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">Resume Score</th>
                             <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">Interview Score</th>
                             <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">Overall Rank</th>
+                            <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">Status</th>
                             <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Action</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                         {isLoading ? (
                             <tr>
-                                <td colSpan="5" className="px-6 py-12 text-center text-slate-400">Loading candidates...</td>
+                                <td colSpan="6" className="px-6 py-12 text-center text-slate-400">Loading candidates...</td>
+                            </tr>
+                        ) : filteredCandidates.length === 0 ? (
+                            <tr>
+                                <td colSpan="6" className="px-6 py-20 text-center">
+                                    <div className="flex flex-col items-center justify-center max-w-sm mx-auto">
+                                        <div className="flex justify-center mb-6 relative">
+                                            <div className="absolute inset-x-0 bottom-0 h-2 bg-slate-100 rounded-full blur-sm"></div>
+                                            <div className="relative z-10 w-24 h-24 bg-slate-50 rounded-full border-4 border-white shadow-sm flex items-center justify-center">
+                                                <Users size={40} className="text-slate-400" />
+                                            </div>
+                                            <div className="absolute top-0 -right-2 w-10 h-10 bg-indigo-50 rounded-full border-4 border-white flex items-center justify-center shadow-sm z-20">
+                                                <Brain size={16} className="text-indigo-500" />
+                                            </div>
+                                            <div className="absolute bottom-2 -left-2 w-8 h-8 bg-emerald-50 rounded-full border-4 border-white flex items-center justify-center shadow-sm z-20">
+                                                <Sparkles size={14} className="text-emerald-500" />
+                                            </div>
+                                        </div>
+                                        <h3 className="text-xl font-bold text-slate-900 mb-2">Awaiting Talent</h3>
+                                        <p className="text-slate-500 text-sm leading-relaxed">
+                                            Once candidates complete their AI interviews, their scores will appear here.
+                                        </p>
+                                    </div>
+                                </td>
                             </tr>
                         ) : filteredCandidates.map((candidate) => (
                             <tr key={candidate.id} className="hover:bg-slate-50 transition-colors group">
@@ -249,6 +306,15 @@ const CandidateTable = () => {
                                         Rank #{candidate.overall_rank}
                                     </span>
                                 </td>
+                                <td className="px-6 py-4 text-center">
+                                    {candidate.recommendation ? (
+                                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${BADGE_STYLES[candidate.recommendation] || 'bg-slate-50 text-slate-600 border-slate-200'}`}>
+                                            {candidate.recommendation}
+                                        </span>
+                                    ) : (
+                                        <span className="text-xs text-slate-400">Pending</span>
+                                    )}
+                                </td>
                                 <td className="px-6 py-4 text-right">
                                     <div className="inline-flex items-center gap-1">
                                         <button
@@ -264,6 +330,14 @@ const CandidateTable = () => {
                                             title="AI Interview Insights"
                                         >
                                             <Brain size={18} />
+                                        </button>
+                                        <button
+                                            onClick={() => openReview(candidate)}
+                                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-white bg-slate-100 hover:bg-slate-900 rounded-lg transition-all border border-slate-200 hover:border-slate-900"
+                                            title="Review Candidate"
+                                        >
+                                            <ClipboardCheck size={14} />
+                                            <span className="hidden lg:inline">Review</span>
                                         </button>
                                     </div>
                                 </td>
@@ -287,6 +361,13 @@ const CandidateTable = () => {
                 isOpen={isInsightsOpen}
                 onClose={() => setIsInsightsOpen(false)}
                 candidate={insightsCandidate}
+            />
+
+            <FinalReviewModal
+                isOpen={isReviewOpen}
+                onClose={() => setIsReviewOpen(false)}
+                candidate={reviewCandidate}
+                onSaved={handleReviewSaved}
             />
         </div>
     );

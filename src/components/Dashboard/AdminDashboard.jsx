@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Users, Activity, ShieldAlert, Server, AlertCircle, CheckCircle2 } from 'lucide-react';
+import AIQualityAnalytics from './AIQualityAnalytics';
 
 const AdminDashboard = () => {
     // TODO: Insert Supabase JWT role verification here
@@ -110,6 +111,9 @@ const AdminDashboard = () => {
                     </div>
                 </div>
             </div>
+
+            {/* ── AI Quality Analytics ──────────────────────────────────── */}
+            <AIQualityAnalytics />
         </motion.div>
     );
 };
